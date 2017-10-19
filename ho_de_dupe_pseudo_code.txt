@@ -1,0 +1,53 @@
+Simple case, single-end --
+How do we know if something is a PCR duplicate?
+	(1) Same UMI/Randomer
+	(2) Same left-most start position (corrected by CIGAR if necessary)
+	(3) Same chromosome
+
+
+SAM --> BAM
+sort BAM          ## by chromosome and bp start
+BAM --> SAM
+
+
+de_dupe.py (single-end)
+
+argparse 
+	-f INPUT_SAM -u UMI_file
+	
+definition DUPE_CHECK(SAM_line):    	## a function to extract information necessary to determine PCR duplicate     
+	split SAM_line by field (tab)   
+	
+	UMI = last part of 1st field        ## assuming the UMI is part of the first field
+	
+	POS = 4th field
+	
+	if 5th field (CIGAR) has "S":        ## if the CIGAR string is soft-clipped, adjust the POS
+		POS = POS - #S 
+	
+	CHROM = 3rd field                    ## maybe if we sorted with samtools, this doesn't matter...
+	
+	DUPE_CHECK = UMI_POS_CHROM           ## combine the info into a string
+
+
+
+umi_dictionary 							## store known UMIs in a dictionary
+dict = {}								## initiate a dict
+
+for line in INPUT_SAM:                    ## read in the sam file and go line by line after the @s
+
+	if line starts with @, write out to OUTPUT.sam   ## write out the headers
+	
+	if line does not start with @:
+		DUPE_CHECK(line)					 ## pass each line through the function established before
+		
+		if UMI in umi_dictionary:			## if UMI in dictionary...
+		
+			if DUPE_CHECK not in dict:           ## if DUPE_CHECK is not in the dict, this means that it's the first time we see it
+				write out line to OUTPUT.SAM     ## write this line out to a new SAM file
+				clear dict                       ## clear the dictionary, because we sorted SAM file, then PCR dupes should be next to each other
+				dict[DUPE_CHECK] = 1	         ## add this line's DUPE_CHECK to the dict
+			else
+				continue 						 ## if DUPE_CHECK is already IN the dict, then it is a PCR dupe, continue to the next line
+				
+		else continue							## if UMI not in dictionary, then skip line
