@@ -1,5 +1,9 @@
 # Deduper
 
+### Part 3
+
+Please look at the part3/ folder for the deduper code
+
 ### Part 1
 Write up a strategy for writing a Reference based PCR duplicate removal tool. Be sure to include an example input and output SAM file.
 
